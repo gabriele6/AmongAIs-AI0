@@ -463,7 +463,7 @@ def updatePlayerPosition(status, players):
 
 # values for map handling
 flag_value = 2
-factor = 8
+factor = 4
 
 # Converts map from string to char matrix
 def toMatrix(map):
@@ -796,6 +796,9 @@ def computeImpostorZone(map, row, col):
           val = map[i][j]
         counter += 1
         sum += map[i][j]
+    
+  if (counter == 0):
+    counter = 1
 
   return sum/counter, (posX,posY)
 
@@ -976,6 +979,13 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
   shoot = False
   i = 0 # number of actions
   start_timer = time.time()
+
+  status = dumb_ch.getStatus()
+  myPlayer = extractMyInfo(status)
+  players = extractPlayerInfo(status)
+  players = updatePlayerPosition(status, players)
+  map = updateMapFromStatus(map, myPlayer, players)
+
   while (not shoot and i < iter):
     if (myPlayer.energy == 0): 
       break
@@ -983,16 +993,13 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
     old_positions = {}
     for p in players.values():
       old_positions[p.symbol] = (p.posX, p.posY)
-    status = dumb_ch.getStatus()
-    myPlayer = extractMyInfo(status)
-    players = extractPlayerInfo(status)
-    players = updatePlayerPosition(status, players)
-    map = updateMapFromStatus(map, myPlayer, players)
+    
     lap_timer = time.time() - start_timer 
     print('[DEF] Defending Position iter:' + str(i) + ' - timer: ' + str(lap_timer))
     new_positions = {}
     for p in players.values():
       new_positions[p.symbol] = (p.posX, p.posY)
+      
     # how much should i wait in this position?  
     min_x, min_y, min_player_x, min_player_y = calculateClosest(players, myPlayer)
     # impostor case: find the best position and wait
@@ -1108,9 +1115,17 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
         print('[YES] Shoot!')
     
     i+=1
+    if (not shoot):
+      status = dumb_ch.getStatus()
+      myPlayer = extractMyInfo(status)
+      players = extractPlayerInfo(status)
+      players = updatePlayerPosition(status, players)
+      map = updateMapFromStatus(map, myPlayer, players)
 
   if (not shoot):
     print('[NO] No Shoot!')
+
+  return status, shoot 
 
 
 def beImpostor(player):
@@ -1146,17 +1161,30 @@ def calculateSteps(players, myPlayer):
 def calculateClosest(players, myPlayer):
   min_x, min_y = 9999, 9999
   min_x_player, min_y_player = '*', '*'
+  manhattan_dist_x, manhattan_dist_y = 9999, 9999
 
   for player in players.values():
     if (player.team != myPlayer.loyalty and player.alive): 
       dist_x = abs(myPlayer.posX - player.posX)
       dist_y = abs(myPlayer.posY - player.posY)
-      if (min_x >= dist_x):
+      if (min_x == dist_x):
+        temp_manhattan = distance(myPlayer.posX, myPlayer.posY, player.posX, player.posY)
+        if (temp_manhattan < manhattan_dist_x):
+          manhattan_dist_x = temp_manhattan
+          min_x_player = player.symbol
+      if (min_x > dist_x):
         min_x = dist_x
         min_x_player = player.symbol
-      if (min_y >= dist_y):
+        manhattan_dist_x = distance(myPlayer.posX, myPlayer.posY, player.posX, player.posY)
+      if (min_y == dist_y):
+        temp_manhattan = distance(myPlayer.posX, myPlayer.posY, player.posX, player.posY)
+        if (temp_manhattan < manhattan_dist_y):
+          manhattan_dist_y = temp_manhattan
+          min_y_player = player.symbol
+      if (min_y > dist_y):
         min_y = dist_y
         min_y_player = player.symbol
+        manhattan_dist_y = distance(myPlayer.posX, myPlayer.posY, player.posX, player.posY)
   return min_x, min_y, min_x_player, min_y_player
 
 
@@ -1216,8 +1244,13 @@ def movingDirection(old_pos, new_pos):
 
   return direction
 
+
+
+
+
 gameName = sys.argv[1] # INSERT GAME NAME HERE
-playerName = sys.argv[2]
+playerName = sys.argv[2] # INSERT PLAYER NAME HERE
+
 n_steps = 9
 
 # Establish Connection
@@ -1263,8 +1296,30 @@ myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players, size=(len(map
 myFlagY, myFlagX = findOnMap(map, myPlayer.myFlag)
 enemyFlagY, enemyFlagX = findOnMap(map, myPlayer.enemyFlag)
 
+emergency_meeting = False
 # Game loop
 while (gameState(status) == 'ACTIVE'):
+  # reading chat 
+  end_timer = time.time()
+  while (time.time() - end_timer < 0.05):
+    readMessage = dumb_chat.readChat(timeout=0.001)
+    if (readMessage != ''):
+      print(readMessage)
+      chat_messages.append(readMessage)
+      if ('EMERGENCY MEETING!' in readMessage):
+        emergency_meeting = True
+      if (emergency_meeting and 'accuses' in readMessage):
+        accused_player = readMessage.split('\n')[0].split(' ')[-1]
+        if (accused_player != myPlayer.name):
+          dumb_ch.accuse(accused_player)
+        emergency_meeting = False
+    else:
+      break
+
+      #prova @GameServer EMERGENCY MEETING! Called by stefan
+      #prova @GameServer stefan accuses luigi
+
+
   minPath = 9999
   for player in players.values():
     if (player.team != myPlayer.loyalty and player.alive): #impostor
@@ -1339,9 +1394,10 @@ while (gameState(status) == 'ACTIVE'):
       chat_sleep = random.randint(10,30)
       dumb_chat.post(gameName, random.choice(CHAT_DICTIONARY['kill']))
 
-    defendPosition(dumb_ch, map, players, myPlayer, iter=3)
+    status, shoot = defendPosition(dumb_ch, map, players, myPlayer, iter=3)
 
-    status = dumb_ch.getStatus()
+    if (shoot):
+      status = dumb_ch.getStatus()
     myPlayer = extractMyInfo(status)
     players = extractPlayerInfo(status)
     players = updatePlayerPosition(status, players)
