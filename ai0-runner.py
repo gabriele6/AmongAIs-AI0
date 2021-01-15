@@ -42,12 +42,11 @@ class CommunicationHandler:
     self.tn = self.connect(host, port)
 
     self.lastAction = time.time()
-    self.timer = timer  # how many seconds do I have to wait before performing another action?
+    self.timer = timer  
 
 
   def connect(self, host, port):
     tn = Telnet(host, port)
-    # TODO: controlla connessione
     print('Connected!')
     return tn
 
@@ -95,7 +94,7 @@ class CommunicationHandler:
 
     # Joining game
     self.tn.write(command.encode('utf8'))
-    # TODO: ADD CONTROLS
+
     res = self.tn.read_until('\n'.encode('utf8')).decode('utf8').split(' ')
     print('[JOIN] ' + res[0])
 
@@ -116,7 +115,7 @@ class CommunicationHandler:
 
     # Starting game
     self.tn.write(command.encode('utf8'))
-    # TODO: ADD CONTROLS
+
     res = self.tn.read_until('\n'.encode('utf8')).decode('utf8').split(' ')
     print('[START] ' + res[0])
 
@@ -127,7 +126,6 @@ class CommunicationHandler:
 
   def getMap(self):
     command = self.matchName + ' LOOK' + '\n'
-    #self.tn.read_very_lazy()
 
     # sleep until I can send another command
     currentTime = time.time()
@@ -152,7 +150,6 @@ class CommunicationHandler:
 
   def getStatus(self):
     command = self.matchName + ' STATUS' + '\n'
-    #self.tn.read_very_lazy()
 
     # sleep until I can send another command
     currentTime = time.time()
@@ -173,7 +170,7 @@ class CommunicationHandler:
     return res[1].split('«ENDOFSTATUS»')[0]
 
 
-  def move(self, direction): #command eg: MOVE S
+  def move(self, direction): 
     command = self.matchName + ' MOVE ' + direction + '\n'
 
     # sleep until I can send another command
@@ -193,7 +190,7 @@ class CommunicationHandler:
     return res
 
 
-  def shoot(self, direction): #command eg: MOVE S
+  def shoot(self, direction): 
     command = self.matchName + ' SHOOT ' + direction + '\n'
 
     # sleep until I can send another command
@@ -212,7 +209,7 @@ class CommunicationHandler:
     self.lastAction = time.time()
     return res
     
-  def sendNOP(self): #NOTA: NON FUNZIONA! 10s delay!
+  def sendNOP(self): 
     command = self.matchName + ' NOP\n'
 
     # sleep until I can send another command
@@ -278,24 +275,14 @@ class Chat:
 
   def connect(self, host, port, player):
     tn = Telnet(host, port)
-    # TODO: controlla connessione
 
     # Connecting to the game chat
-    command = 'NAME ' + player.symbol + '\n' #TODO: use real name
+    command = 'NAME ' + player.name + '\n'
     tn.write(command.encode('utf8'))
 
     print('Connected!')
     return tn
 
-  '''
-  TODO: Should also join
-    #GLOBAL for system-wide message (e.g., shutting down the server)
-    #CHAT for Chat Server announcements
-    #LEAGUE for League Manager announcements
-    #LOGS for Log Manager announcements
-    #DATA for Data Analysis announcements
-    #STREAM
-  '''
   def join(self, channel, team):
     #self.playerName = playerName
     #TODO: save channels in a list
@@ -346,7 +333,7 @@ class Player:
     self.posX = posX
     self.posY = posY
     self.alive = True 
-    self.posHistory = [] #TODO: use queue
+    self.posHistory = [] 
     self.posHistory.append((posY,posX))
     if (symbol.islower()):
       self.myFlag = 'x'
@@ -421,7 +408,6 @@ def extractPlayerInfo(status):
     posX = int(line.split('x=')[1].split(' ')[0])
     posY = int(line.split('y=')[1].split(' ')[0])
     state = line.split('state=')[1].split('/n')[0]
-    #TODO: status: Alive/Dead/Disconnected
     if (symbol != myPlayer.symbol):
       players[symbol] = Player(symbol, name, team, posX, posY)
       if ('ACTIVE' not in state and 'LOBBYGUEST' not in state):
@@ -432,9 +418,6 @@ def extractPlayerInfo(status):
   return players
 
 def updateMapFromStatus(map, myPlayer, players):
-  #myPlayer = extractMyInfo(status)
-  #p_list = extractPlayerInfo(status)
-  #p_list = updatePlayerPosition(status, p_list)
   for player in players.values():
     p_posX, p_posY = player.posX, player.posY
     oldY, oldX = findOnMap(map, player.symbol)
@@ -484,8 +467,6 @@ def toMatrix(map):
 # <=0 obstacles
 # >0  cost to pass through
 def prepareMap(map, player):
-  # TODO: it's converting the matrix in-place
-  #map = toMatrix(map)
   for row in range(len(map)):
     for col in range(len(map[row])):
       if (map[row][col] == '#'): #wall
@@ -530,7 +511,6 @@ def prepareMap(map, player):
 # 10 teamflag
 # 11 opponentflag
 def prepareMap2(original_map):
-  # TODO: it's converting the matrix in-place
   map = np.zeros((128,256)) # setting matrix to maximum size
   
   for row in range(len(original_map)):
@@ -730,7 +710,7 @@ def bestAdjacientZone(zones, best_pos, posX, posY):
     best_right = zones[zone_right[1]][zone_right[0]]
   
   best = best_up
-  (bestX,bestY) = best_pos[zone_up[1]][zone_up[0]] # TODO: controllare tantissimo
+  (bestX,bestY) = best_pos[zone_up[1]][zone_up[0]] 
   if (best > best_down):
     best = best_down
     (bestX,bestY) = best_pos[zone_down[1]][zone_down[0]]
@@ -821,7 +801,6 @@ def computeImpostorDangerMap(map, players):
 
 # Finds an item on the map
 def findOnMap(map, symbol):
-  #map = toMatrix(map)
 
   for row in range(len(map)):
     for col in range(len(map[row])):
@@ -843,6 +822,7 @@ colors = {
     "energy":       [255,255,255],  #energy       = white
     "trap":         [255,102,255]   #trap         = purple
 }
+
 def buildMap(map):
   beautiful_map = np.zeros((len(map), len(map[0]), 3), dtype=np.uint8)
   for row in range(len(map)):
@@ -865,9 +845,9 @@ def buildMap(map):
         beautiful_map[row][col] = colors["team_1_flag"]
       elif (map[row][col] == 'x'): #flag 2
         beautiful_map[row][col] = colors["team_2_flag"]
-      elif (map[row][col].isupper()): #team maiuscolo
+      elif (map[row][col].isupper()): #team uppercase
         beautiful_map[row][col] = colors["team_1"]
-      else:
+      else: #team lowercase
         beautiful_map[row][col] = colors["team_2"]
 
   return beautiful_map
@@ -880,32 +860,31 @@ def printMap(map, size=(10,10)):
   plt.yticks([])
   plt.show()
 
-# https://stackoverflow.com/questions/44947505/how-to-make-a-movie-out-of-images-in-python/44951066#44951066
 def createReplay(map_h, filename):
   os.system("mkdir frames")
 
   i=0
   for map in map_h:
-    # creo frame
+    # creating frames
     beautiful_map = buildMap(map)
     plt.imshow(beautiful_map, interpolation='nearest')
     plt.xticks([])
     plt.yticks([])
-    # salvo frame in memoria
+    # saving frames
     plt.savefig('frames/img' + '{:04d}'.format(i) + '.png')
     i = i+1
 
-  # creo video dai frames (3fps, filename.mp4 video finale)
+  # crete video from frames (3fps, filename.mp4)
   os.system("ffmpeg -r 3 -i frames/img%04d.png -vcodec mpeg4 -y " + filename + ".mp4")
 
-  # removing all frames
+  # removing all frames from disk
   files = glob.glob('frames/*.png')
   for f in files:
-    open(f, 'w').close() #overwrite and make the file blank instead - ref: https://stackoverflow.com/a/4914288/3553367
+    open(f, 'w').close() #overwrite and make the file blank instead (colab)
     os.remove(f) #delete the blank file from google drive will move the file to bin instead
 
 
-# Manhattan distance (not sure if needed)
+# Manhattan distance
 def distance(xa, ya, xb, yb):
   return (abs(xa - xb) + abs(ya - yb))
   
@@ -922,20 +901,17 @@ def findPath(map, startx, starty, endx, endy):
   return path
 
 # Returns a matrix of distances from the flag
-# TODO: test if it works
 def findDistances(map, endx, endy):
   distMap = copy.deepcopy(map)
-  # per ogni punto della matrice
   for row in range(len(map)):
     for col in range(len(map[row])):
-      # se il punto è valido (valore > 0)
+      # if the cell is valid (value > 0)
       if(map[row][col]>0):
         path = findPath(map, col, row, endx, endy)
         distMap[row][col] = len(path)
-      # se il punto non è valido
+      # if the cell is not valid
       else:
         distMap[row][col] = -1
-  # distMap[endx][endy] = 0
   return distMap
 
 # Takes current position and next position, finds the direction
@@ -950,18 +926,6 @@ def findNextDirection(posX, posY, nextX, nextY):
     return 'S'
   # else pos = next
   return ''
-#old
-#def findNextDirection(posX, posY, nextX, nextY):
-#  if (nextX < posX):
-#    return 'N'
-#  elif (nextX > posX):
-#    return 'S'
-#  elif (nextY < posY):
-#    return 'W'
-#  elif (nextY > posY):
-#    return 'E'
-  # else pos = next
-#  return ''
 
 # follows a path from start to end
 def pathToCommand(ch, path):
@@ -995,51 +959,6 @@ def movedTowardsFlag(map, player, direction):
   return new_dist < previous_dist
 
 
-# TODO: Function that takes the map and your team, finds the closer team to the opponent's flag
-# Why? To see if it's better to run for the opponent's flag or to defend
-# -> if we are closer to the enemy flag then try to take it, else defend (also maybe barrier exploit?)
-
-"""### Less Dumb AI0"""
-
-'''
-Logica di base:
-  Lobby:
-    Giudica tutti come IA
-    Aggiorna lo stato
-  Start:
-    Avvia un timer per sapere quanto tempo è passato dall'inizio
-    - nei primi secondi vai verso zona safe (5s)
-    Con lo stato calcola chi è il più vicino
-    Calcola quanto sono lontani i nemici da me in termini di (x,y)
-      Calcola di quanto posso spostarmi verso la bandiera senza entrare in linea d'aria con nessuno (anche se si spostano)
-      Spostami di quell'ammontare verso la bandiera
-      Aggiorna lo status
-      Ripeti
-  Can Shoot:
-    Se c'è qualcuno in shooting range (entro un certo limite)
-      Se non ci sono ostacoli o morti in mezzo
-        Spara
-    Altrimenti se c'è qualcuno in linea con la visuale libera ma è troppo lontano
-      Fai un passo in direzione della bandiera ma uscendo dal range
-  Can Capture:
-    Corri?
-
-
-
-  IDEE:
-  - dividere la mappa in zone
-    - calcolare il grado di convenienza di ogni zona (in base a nemici e flag)
-  - controllare a chi abbiamo sparato
-    - riprendere la funzione del qlearning
-    - controllare che il nemico a cui sparimo non sia già morto
-  - muoviti con la barriera più vicina verso la bandiera avversaria
-  
-  TODO:
-  - status deve aggiornare i valori sulla mappa
-
-
-'''
-
 def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
   print('[DEF] Defending Position.')
   # Rambo mode 
@@ -1063,14 +982,10 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
       iter = max(min_x, min_y)
       i = 0
 
-    # TODO: shoot friends
     closer_player_x = players[min_player_x]
     closer_player_y = players[min_player_y]
-    # check if the closest player is in shooting range
-    #print('CloserPlayer X [' + closer_player_x.symbol + ']: (' + str(closer_player_x.posX) + ', ' + str(closer_player_x.posY) + ')')
-    #print('CloserPlayer Y [' + closer_player_y.symbol + ']: (' + str(closer_player_y.posX) + ', ' + str(closer_player_y.posY) + ')')
-    #print('MyPlayer: (' + str(myPlayer.posX) + ', ' + str(myPlayer.posY) + ')')
 
+    # check if the closest player is in shooting range
     if (closer_player_x.posX - myPlayer.posX == 1): #enemy from E
       shootDirection = findNextDirection(myPlayer.posX, myPlayer.posY, closer_player_x.posX-1, closer_player_x.posY)
       shoot_dist = checkShoot(map, myPlayer, closer_player_x.symbol, shootDirection)
@@ -1081,7 +996,7 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
           players[shootRes[1]].alive = False
           shoot = True
           print('[YES] Shoot hit: ' + shootRes[1])
-        if (closer_player_x.alive == True): # se è vivo, sparo di nuovo 
+        if (closer_player_x.alive == True): # if alive, shoot again
           shootRes = dumb_ch.shoot(shootDirection)
           print(shootRes)
           if (shootRes[1].isalpha()):
@@ -1099,7 +1014,7 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
           players[shootRes[1]].alive = False
           shoot = True
           print('[YES] Shoot hit: ' + shootRes[1])
-        if (closer_player_x.alive == True): # se è vivo, sparo di nuovo 
+        if (closer_player_x.alive == True): # if alive, shoot again 
           shootRes = dumb_ch.shoot(shootDirection)
           print(shootRes)
           if (shootRes[1].isalpha()):
@@ -1117,7 +1032,7 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
           players[shootRes[1]].alive = False
           shoot = True
           print('[YES] Shoot hit: ' + shootRes[1])
-        if (closer_player_y.alive == True): # se è vivo, sparo di nuovo 
+        if (closer_player_y.alive == True): # if alive, shoot again
           shootRes = dumb_ch.shoot(shootDirection)
           print(shootRes)
           if (shootRes[1].isalpha()):
@@ -1135,7 +1050,7 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
           players[shootRes[1]].alive = False
           shoot = True
           print('[YES] Shoot hit: ' + shootRes[1])
-        if (closer_player_y.alive == True): # se è vivo, sparo di nuovo 
+        if (closer_player_y.alive == True): # if alive, shoot again
           shootRes = dumb_ch.shoot(shootDirection)
           print(shootRes)
           if (shootRes[1].isalpha()):
@@ -1210,7 +1125,7 @@ def calculateClosest(players, myPlayer):
       if (min_y >= dist_y):
         min_y = dist_y
         min_y_player = player.symbol
-  #steps = int(max(min_x, min_y)) + 1
+
   return min_x, min_y, min_x_player, min_y_player
 
 def checkShoot(map, player, target_player, direction):
@@ -1270,7 +1185,7 @@ def movingDirection(old_pos, new_pos):
   return direction
 
 gameName = sys.argv[1] # INSERT GAME NAME HERE
-playerName = sys.argv[2]
+playerName = sys.argv[2] # INSERT PLAYER NAME HERE
 n_steps = 9
 
 # Establish Connection
@@ -1291,14 +1206,14 @@ dumb_chat.join(gameName, myPlayer.team)
 # Status requests until the game is started
 judged_players = []
 while(gameState(status) == 'LOBBY'):
-  judged_players = judgePlayers(judged_players, players, dumb_ch) #TODO: find a better judging system
+  judged_players = judgePlayers(judged_players, players, dumb_ch) 
   status = dumb_ch.getStatus()
   players = extractPlayerInfo(status)
 
 # Game has started
 startGame = time.time()
 players = extractPlayerInfo(status)
-myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players) #pos con linee di tiro
+myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players) #pos with shooting lines
 
 # function to calculate how close each player is to the flags
 myFlagY, myFlagX = findOnMap(map, myPlayer.myFlag)
@@ -1314,7 +1229,6 @@ while(gameState(status) == 'ACTIVE'):
       player.setFlagDistance(player_dist)
       if(minPath > player_dist):
         minPath = player_dist
-        # TODO: use x,y distance to find the closest in shooting range
         closer_player = player
 
   posY, posX = myPlayer.posY, myPlayer.posX
@@ -1325,9 +1239,7 @@ while(gameState(status) == 'ACTIVE'):
     zones, best_pos = computeDangerMap(myPreparedMap, enemyFlagX, enemyFlagY)
     myZone = findZone(posX, posY)
     best, bestX, bestY = bestAdjacientZone(zones, best_pos, posX, posY)
-    #print(f'Pos:({posX},{posY}) Best:({bestX},{bestY})')
     zone_path = findPath(myPreparedMap, posX, posY, bestX, bestY)
-    #print(zone_path)
     p = pathToCommand(dumb_ch, zone_path)
     # update the status to get the update info
     status = dumb_ch.getStatus()
@@ -1338,9 +1250,6 @@ while(gameState(status) == 'ACTIVE'):
     elapsed_time = time.time() - startGame
     print('Elapsed time: ' + str(elapsed_time))
 
-  # per ogni player, controlla la distanza (x,y) da me e vedi se sono a tiro
-  #n_steps = calculateSteps(players, myPlayer)
-
   #--------impostor case -> run to the "enemy flag" and shoot all your friends
   if (myPlayer.team != myPlayer.loyalty):
     myPreparedMap = prepareImpostorMap(copy.deepcopy(map), myPlayer, players)
@@ -1348,26 +1257,19 @@ while(gameState(status) == 'ACTIVE'):
     zones, best_pos = computeImpostorDangerMap(myPreparedMap, players)
     myZone = findZone(posX, posY)
     best, bestX, bestY = bestAdjacientZone(zones, best_pos, posX, posY)
-    #print(f'Pos:({posX},{posY}) Best:({bestX},{bestY})')
     if (zones[myZone[1]][myZone[0]] > best):
       zone_path = findPath(myPreparedMap, posX, posY, bestX, bestY)
-      #print(zone_path)
       p = pathToCommand(dumb_ch, zone_path[0:n_steps+1])
-    # TODO: shoot friends
     defendPosition(dumb_ch, map, players, myPlayer)
 
 
   #--------true loyalty
   else:
-    # extract info from status to avoid calling getMap()
-    myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players) #pos con linee di tiro
+    myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players) #pos with shooting lines
     posY, posX = myPlayer.posY, myPlayer.posX
-    #n_steps = calculateSteps(players, myPlayer)
-    #print('n_steps = ' + str(n_steps))
     myPath = findPath(myPreparedMap, posX, posY, enemyFlagX, enemyFlagY)
     if (len(myPath) > 0):
-      p = pathToCommand(dumb_ch, myPath[0:n_steps+1]) # TODO: compute n_step
-    # TODO: check if I can shoot someone
+      p = pathToCommand(dumb_ch, myPath[0:n_steps+1]) 
     # extract info from status to avoid calling getMap()
     status = dumb_ch.getStatus()
     myPlayer = extractMyInfo(status)
@@ -1375,32 +1277,7 @@ while(gameState(status) == 'ACTIVE'):
     players = updatePlayerPosition(status, players)
     map = updateMapFromStatus(map, myPlayer, players)
     myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players)
-    elapsed_time = time.time() - startGame
-
-    #defendPosition(dumb_ch, map, players, myPlayer, iter=2)
-
-    # TODO: DEFEND FLAG and SHOOT ENEMIES
-    '''
-    myPath = findPath(myPreparedMap, posX, posY, enemyFlagX, enemyFlagY)
-    myPlayer.setFlagDistance(len(myPath))
-    if (myPlayer.distFromFlag <= minPath):
-      # TODO: check cooldown timer for the flag 
-      print('I am closer')
-      p = pathToCommand(dumb_ch, myPath[0:n_steps])
-    # otherwise, do something else (move to our flag and shoot opponents?)
-    else: #TODO: rambo mode or cover your flag
-      print('I am not closer')
-      playerPreparedMap = prepareMap3(copy.deepcopy(map), closer_player, players)
-      closer_path = findPath(playerPreparedMap, int(closer_player.posX), int(closer_player.posY), myFlagX, myFlagY)
-      defendFlag(dumb_ch, closer_path, closer_player, players, myPlayer)
-    '''
-    
-
-  #map = dumb_ch.getMap()
-  #myPreparedMap = prepareMap3(copy.deepcopy(map), myPlayer, players)
-  #status = dumb_ch.getStatus()
-  #players = updatePlayerPosition(status, players)
-  
+    elapsed_time = time.time() - startGame  
 
 # Game is over
 myScore = extractMyInfo(status).score
