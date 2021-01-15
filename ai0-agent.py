@@ -1115,12 +1115,12 @@ def defendPosition(dumb_ch, map, players, myPlayer, iter=5):
         print('[YES] Shoot!')
     
     i+=1
-    if (not shoot):
-      status = dumb_ch.getStatus()
-      myPlayer = extractMyInfo(status)
-      players = extractPlayerInfo(status)
-      players = updatePlayerPosition(status, players)
-      map = updateMapFromStatus(map, myPlayer, players)
+    #if (not shoot):
+    status = dumb_ch.getStatus()
+    myPlayer = extractMyInfo(status)
+    players = extractPlayerInfo(status)
+    players = updatePlayerPosition(status, players)
+    map = updateMapFromStatus(map, myPlayer, players)
 
   if (not shoot):
     print('[NO] No Shoot!')
@@ -1298,7 +1298,7 @@ enemyFlagY, enemyFlagX = findOnMap(map, myPlayer.enemyFlag)
 
 emergency_meeting = False
 # Game loop
-while (gameState(status) == 'ACTIVE'):
+while (gameState(status) == 'ACTIVE' and myPlayer.alive):
   # reading chat 
   end_timer = time.time()
   while (time.time() - end_timer < 0.05):
@@ -1357,7 +1357,7 @@ while (gameState(status) == 'ACTIVE'):
 
   #--------impostor case -> run to the "enemy flag" and shoot all your friends
   if (myPlayer.team != myPlayer.loyalty):
-    myPreparedMap = prepareImpostorMap(copy.deepcopy(map), myPlayer, players)
+    myPreparedMap = prepareImpostorMap(copy.deepcopy(map), myPlayer, players, size=(len(map),len(map[0])))
     posY, posX = myPlayer.posY, myPlayer.posX
     zones, best_pos = computeImpostorDangerMap(myPreparedMap, players)
     myZone = findZone(posX, posY)
@@ -1369,8 +1369,11 @@ while (gameState(status) == 'ACTIVE'):
       chat_timer = time.time()  
       chat_sleep = random.randint(10,30)
       dumb_chat.post(gameName, random.choice(CHAT_DICTIONARY['defend']))
-    defendPosition(dumb_ch, map, players, myPlayer)
-
+    status, shoot = defendPosition(dumb_ch, map, players, myPlayer)
+    myPlayer = extractMyInfo(status)
+    players = extractPlayerInfo(status)
+    players = updatePlayerPosition(status, players)
+    map = updateMapFromStatus(map, myPlayer, players)
 
   #--------true loyalty
   else:
@@ -1396,8 +1399,8 @@ while (gameState(status) == 'ACTIVE'):
 
     status, shoot = defendPosition(dumb_ch, map, players, myPlayer, iter=3)
 
-    if (shoot):
-      status = dumb_ch.getStatus()
+    #if (shoot):
+    #  status = dumb_ch.getStatus()
     myPlayer = extractMyInfo(status)
     players = extractPlayerInfo(status)
     players = updatePlayerPosition(status, players)
