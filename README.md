@@ -1,5 +1,7 @@
 # AmongAIs-AI0
+An AI agent able to play a social deduction and shooting game
 
+## Usage  
 To run the agent, simply download the ai0-agent.py file from the Github repository, and run it in a terminal with
 >python ai0-agent.py matchname playername
   
